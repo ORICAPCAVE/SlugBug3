@@ -11,7 +11,7 @@ import SwiftUI
 import Foundation
 import FirebaseAuth
 import Combine
-
+import FirebaseDatabase
 
 @MainActor
 final class FriendsVM: ObservableObject {
@@ -19,30 +19,30 @@ final class FriendsVM: ObservableObject {
     @Published var canInvite = true
     @Published var isLoading = false
     @Published var errorMessage: String?
-
+    
     private let service: RealtimeDBService
     private let userId: String
-
+    private let dbRef = Database.database().reference()
     init(
         userId: String? = Auth.auth().currentUser?.uid,
         service: RealtimeDBService = RealtimeDBService()
     ) {
         self.service = service
         self.userId  = userId ?? ""
-
+        
         Task {
             await load()
         }
     }
-
+    
     // MARK: - Load
-
+    
     func load() async {
         guard !userId.isEmpty else { return }
-
+        
         isLoading = true
         defer { isLoading = false }
-
+        
         do {
             let friends = try await service.loadFriends(for: userId)
             self.items = friends.sorted {
@@ -53,9 +53,9 @@ final class FriendsVM: ObservableObject {
             self.errorMessage = error.localizedDescription
         }
     }
-
+    
     // MARK: - Intents
-
+    
     func addFriendRow() {
         items.append(Friend(id: "", name: "", phone: "", invited: false))
     }
@@ -64,10 +64,10 @@ final class FriendsVM: ObservableObject {
         items[idx].invited = true
         Task { await save(items[idx]) }
     }
-
+    
     func save(_ friend: Friend) async {
         guard !userId.isEmpty else { return }
-
+        
         do {
             try await service.save(friend: friend, for: userId)
             await load()
@@ -75,12 +75,12 @@ final class FriendsVM: ObservableObject {
             self.errorMessage = error.localizedDescription
         }
     }
-
+    
     func delete(at offsets: IndexSet) async {
         guard !userId.isEmpty else { return }
-
+        
         let toDelete = offsets.map { items[$0] }
-
+        
         do {
             for friend in toDelete {
                 if !friend.id.isEmpty {
@@ -91,9 +91,28 @@ final class FriendsVM: ObservableObject {
         } catch {
             self.errorMessage = error.localizedDescription
         }
+        
     }
-    
+    func deleteFriend(id: String) async throws {
+        let ref = dbRef
+            .child("friends")
+            .child(id)
+        
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            ref.removeValue { error, _ in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
 }
+        
+    
+
+
 #if DEBUG
 extension FriendsVM {
     static var preview: FriendsVM {

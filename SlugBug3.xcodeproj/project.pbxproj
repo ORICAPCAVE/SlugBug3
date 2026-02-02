@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B20ADE062E9DD0A200972A61 /* slugbug12.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = B20ADE052E9DD0A200972A61 /* slugbug12.mp4 */; };
+		B22E07432F31403000F9D0D0 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = B22E07422F313FE500F9D0D0 /* .gitignore */; };
 		B237B6C02E8CBF4E0052BEB7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B237B6BF2E8CBF4E0052BEB7 /* Assets.xcassets */; };
 		B237B6C82E8DBE1B0052BEB7 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B237B6C72E8DBE1B0052BEB7 /* GoogleSignIn */; };
 		B237B6CA2E8DBE1B0052BEB7 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B237B6C92E8DBE1B0052BEB7 /* GoogleSignInSwift */; };
@@ -21,6 +22,7 @@
 
 /* Begin PBXFileReference section */
 		B20ADE052E9DD0A200972A61 /* slugbug12.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = slugbug12.mp4; sourceTree = "<group>"; };
+		B22E07422F313FE500F9D0D0 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		B237B6BF2E8CBF4E0052BEB7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2B956282E8703A700D25059 /* SlugBug3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SlugBug3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2B956702E8873B600D25059 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -55,6 +57,7 @@
 		B24E8F1D2E861ADD009C63BB = {
 			isa = PBXGroup;
 			children = (
+				B22E07422F313FE500F9D0D0 /* .gitignore */,
 				B20ADE052E9DD0A200972A61 /* slugbug12.mp4 */,
 				B237B6BF2E8CBF4E0052BEB7 /* Assets.xcassets */,
 				B2B956702E8873B600D25059 /* GoogleService-Info.plist */,
@@ -148,6 +151,7 @@
 			files = (
 				B20ADE062E9DD0A200972A61 /* slugbug12.mp4 in Resources */,
 				B237B6C02E8CBF4E0052BEB7 /* Assets.xcassets in Resources */,
+				B22E07432F31403000F9D0D0 /* .gitignore in Resources */,
 				B2B956712E8873B600D25059 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

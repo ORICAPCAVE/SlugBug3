@@ -18,14 +18,14 @@ struct Friend: Identifiable, Codable, Equatable {
     var name: String       // Firebase: "friend"
     var phone: String      // Firebase: "phone"
     var invited: Bool      // Firebase: "isSelected"
-
+    
     enum CodingKeys: String, CodingKey {
         case id      = "key"
         case name    = "friend"
         case phone   = "phone"
         case invited = "isSelected"
     }
-
+    
     init(
         id: String = "",
         name: String = "",
@@ -37,19 +37,19 @@ struct Friend: Identifiable, Codable, Equatable {
         self.phone = phone
         self.invited = invited
     }
-
+    
     // Failable init from DataSnapshot
     init?(snapshot: DataSnapshot) {
         guard let dict = snapshot.value as? [String: Any] else {
             return nil
         }
-
+        
         self.id      = dict["key"] as? String ?? snapshot.key
         self.name    = dict["friend"] as? String ?? ""
         self.phone   = dict["phone"] as? String ?? ""
         self.invited = dict["isSelected"] as? Bool ?? false
     }
-
+    
     func toDictionary() -> [String: Any] {
         [
             "key": id,
@@ -59,3 +59,4 @@ struct Friend: Identifiable, Codable, Equatable {
         ]
     }
 }
+   
