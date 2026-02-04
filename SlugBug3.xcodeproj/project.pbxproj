@@ -17,7 +17,7 @@
 		B2B956672E8714E100D25059 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = B2B956662E8714E100D25059 /* FirebaseDatabase */; };
 		B2B956692E8714E100D25059 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = B2B956682E8714E100D25059 /* FirebaseFunctions */; };
 		B2B9566B2E8714E100D25059 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B2B9566A2E8714E100D25059 /* FirebaseStorage */; };
-		B2B956712E8873B600D25059 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B2B956702E8873B600D25059 /* GoogleService-Info.plist */; };
+		B2EF29D12F33B7B3003F2646 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B2EF29D02F33B7B3003F2646 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,7 +25,7 @@
 		B22E07422F313FE500F9D0D0 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		B237B6BF2E8CBF4E0052BEB7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2B956282E8703A700D25059 /* SlugBug3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SlugBug3.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B2B956702E8873B600D25059 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B2EF29D02F33B7B3003F2646 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,10 +57,10 @@
 		B24E8F1D2E861ADD009C63BB = {
 			isa = PBXGroup;
 			children = (
+				B2EF29D02F33B7B3003F2646 /* GoogleService-Info.plist */,
 				B22E07422F313FE500F9D0D0 /* .gitignore */,
 				B20ADE052E9DD0A200972A61 /* slugbug12.mp4 */,
 				B237B6BF2E8CBF4E0052BEB7 /* Assets.xcassets */,
-				B2B956702E8873B600D25059 /* GoogleService-Info.plist */,
 				B2B956292E8703A700D25059 /* SlugBug3 */,
 				B24E8F272E861ADD009C63BB /* Products */,
 			);
@@ -150,9 +150,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				B20ADE062E9DD0A200972A61 /* slugbug12.mp4 in Resources */,
+				B2EF29D12F33B7B3003F2646 /* GoogleService-Info.plist in Resources */,
 				B237B6C02E8CBF4E0052BEB7 /* Assets.xcassets in Resources */,
 				B22E07432F31403000F9D0D0 /* .gitignore in Resources */,
-				B2B956712E8873B600D25059 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
