@@ -5,6 +5,8 @@ build/
 *.xcuserdata/
 *.xcscmblueprint
 *.xccheckout
+GoogleService-Info.plist
+
 
 # Swift Package Manager
 .build/
