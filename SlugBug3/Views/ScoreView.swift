@@ -205,7 +205,19 @@ struct ScoreView: View {
             guard !isPreview else { return }
             vm.stop()
         }
+        .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .tint(.white)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Buggy Photos")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+            }
     }
+    
 }
 #if DEBUG
 #Preview("ScoreView (Forced Landscape Size)") {

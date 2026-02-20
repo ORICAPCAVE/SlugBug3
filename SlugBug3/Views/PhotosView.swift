@@ -91,8 +91,12 @@ struct PhotosView: View {
             //   avoid lifecycle and hit-testing issues inside nested containers.
 
             GeometryReader { geo in
-                let isLandscape = geo.size.width > geo.size.height
+                let isLandscape =
+                    (UIApplication.shared.connectedScenes
+                        .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene)?
+                        .interfaceOrientation.isLandscape ?? (geo.size.width > geo.size.height)
                 let isPad = UIDevice.current.userInterfaceIdiom == .pad
+                let isNarrowWindow = geo.size.width < 700
                 // ✅ Your two knobs (percent of screen height)
                 let iPhoneDropPct: CGFloat = 0.20   // 20% down on iPhone
                 let iPadDropPct: CGFloat   = 0.20   // 45% down on iPad
@@ -109,7 +113,7 @@ struct PhotosView: View {
                 let captureBoxHeight: CGFloat = {
                     let available = geo.size.height - geo.safeAreaInsets.top - geo.safeAreaInsets.bottom
                     let raw = available - 260  // space needed for title + button + library header, etc.
-
+                    
                     // ✅ iPhone-only smaller caps
                     let capPhonePortrait: CGFloat = 170
                     let capPhoneLandscape: CGFloat = 110
@@ -138,8 +142,10 @@ struct PhotosView: View {
                 // - small in iPhone landscape
                 // - controllable in portrait
                 let extraTop: CGFloat = {
-                    if isPad && isLandscape {
-                        return (geo.size.height * 0.62).clamped(to: 380...560)
+                    if isPad && isLandscape && !isNarrowWindow {
+                        return (geo.size.height * 0.62).clamped(to: 380...560)   // fullscreen iPad landscape
+                    } else if isPad && isLandscape && isNarrowWindow {
+                        return (geo.size.height * 0.18).clamped(to: 90...220)    // split iPad landscape (smaller)
                     } else if isPad {
                         return (geo.size.height * 0.18).clamped(to: 90...220)
                     } else if isLandscape {
@@ -151,12 +157,13 @@ struct PhotosView: View {
 
                 // ✅ Portrait-only "move up/down" knob (does NOT affect landscape)
                 let portraitLift: CGFloat = 40  // increase to move portrait UP more
-                let topSpacerHeight = max(
-                    0,
-                    (geo.safeAreaInsets.top + outerPad + extraTop + deviceDrop - (isLandscape ? 0 : portraitLift))
-                        .clamped(to: 0...220)   // ✅ cap it (tune 160–260)
-                )
+                let globalLift = geo.size.height * 0.10   // 🔧 move UP 10%
+                let baseTop = (geo.safeAreaInsets.top + outerPad + extraTop + deviceDrop
+                              - (isLandscape ? 0 : portraitLift))
 
+                let cappedTop = baseTop.clamped(to: isPad ? 0...620 : 0...260)
+
+                let topSpacerHeight = max(0, cappedTop - geo.size.height * 0.10) // ✅ always moves
 
 
                 // ... now use topSpacerHeight here:
@@ -289,6 +296,14 @@ struct PhotosView: View {
         } message: {
             Text("This can’t be undone.")
         }
+        .navigationBarTitleDisplayMode(.inline)     // ✅ and this
+    
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.teal.opacity(0.85), for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .tint(.white)
+    
+        
     }
     
 

@@ -117,11 +117,24 @@ struct MainMenuView: View {
                                     .frame(maxWidth: .infinity)
                                     .frame(width: topButtonWidth)
                                 
-                                Button("Log out") { confirmLogout = true }
-                                    .buttonStyle(.borderedProminent)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(width: topButtonWidth)
-                            }
+                                Button {
+                                       print("✅ Logout icon tapped")
+                                       confirmLogout = true
+                                   } label: {
+                                       Image(systemName: "rectangle.portrait.and.arrow.right")
+                                           .font(.title2)
+                                           .padding(10)
+                                           .contentShape(Rectangle())
+                                   }
+                                   .buttonStyle(.plain)   // avoids weird styling/disabled behavior
+                               }
+                               .confirmationDialog("Sign out?", isPresented: $confirmLogout) {
+                                   Button("Log out", role: .destructive) {
+                                       print("✅ Confirmed logout")
+                                       session.signOut(resetLanding: true)
+                                   }
+                                   Button("Cancel", role: .cancel) {}
+                               }
                             
                             .frame(maxWidth: contentMaxWidth)
                             .frame(maxWidth: .infinity, alignment: isLandscape ? .center : .leading)
@@ -221,6 +234,8 @@ struct MainMenuView: View {
         
             
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+           
+            
         }
     }
     

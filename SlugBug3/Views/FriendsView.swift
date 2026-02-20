@@ -77,6 +77,15 @@ struct FriendsView: View {
         } message: {
             Text("Are you sure you want to delete \(pendingDeleteName ?? "this friend")?")
         }
+ 
+            .navigationTitle("Friends")                 // ✅ add this
+            .navigationBarTitleDisplayMode(.inline)     // ✅ and this
+        
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.teal.opacity(0.85), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .tint(.white)
+        
         
     }
     
