@@ -118,23 +118,25 @@ struct MainMenuView: View {
                                     .frame(width: topButtonWidth)
                                 
                                 Button {
-                                       print("✅ Logout icon tapped")
-                                       confirmLogout = true
-                                   } label: {
-                                       Image(systemName: "rectangle.portrait.and.arrow.right")
-                                           .font(.title2)
-                                           .padding(10)
-                                           .contentShape(Rectangle())
-                                   }
-                                   .buttonStyle(.plain)   // avoids weird styling/disabled behavior
-                               }
-                               .confirmationDialog("Sign out?", isPresented: $confirmLogout) {
-                                   Button("Log out", role: .destructive) {
-                                       print("✅ Confirmed logout")
-                                       session.signOut(resetLanding: true)
-                                   }
-                                   Button("Cancel", role: .cancel) {}
-                               }
+                                    print("✅ Logout button tapped")
+                                    confirmLogout = true
+                                } label: {
+                                    Text("Log Out")
+                                        .font(.headline)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                                .buttonStyle(.plain)
+                                .confirmationDialog("Sign out?", isPresented: $confirmLogout) {
+                                    Button("Log out", role: .destructive) {
+                                        print("✅ Confirmed logout")
+                                        session.signOut(resetLanding: true)
+                                    }
+                                    Button("Cancel", role: .cancel) {}
+                                }
+                            }
                             
                             .frame(maxWidth: contentMaxWidth)
                             .frame(maxWidth: .infinity, alignment: isLandscape ? .center : .leading)

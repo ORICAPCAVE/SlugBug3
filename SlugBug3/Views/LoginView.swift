@@ -85,14 +85,26 @@ struct LoginView: View {
                                 vm.errorMessage = "No presenter available."
                             }
                         } label: {
-                            HStack {
-                                Image(systemName: "g.circle")
+                            HStack(spacing: 10) {
+                                Image(systemName: "g.circle.fill")
+                                    .font(.title3)
+
                                 Text("Sign in with Google")
+                                    .font(.headline)
+
+                                Spacer()
                             }
-                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background(.thinMaterial) // pops more than bordered on busy images
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(.white.opacity(0.85), lineWidth: 2) // strong outline
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .shadow(radius: 6) // lifts it off the background
                         }
-                        .buttonStyle(.bordered)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .buttonStyle(.plain) // avoid SwiftUI muting it
                         .disabled(vm.isLoading)
                         
                         Button("Home", action: onHome)
