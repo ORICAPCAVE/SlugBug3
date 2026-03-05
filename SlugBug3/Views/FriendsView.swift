@@ -35,21 +35,28 @@ struct FriendsView: View {
                 .allowsHitTesting(false)
             
             GeometryReader { geo in
-                let isLandscape = geo.size.width > geo.size.height
-                
+                let deviceLandscape =
+                    (UIApplication.shared.connectedScenes
+                        .compactMap { $0 as? UIWindowScene }
+                        .first(where: { $0.activationState == .foregroundActive })?
+                        .interfaceOrientation.isLandscape) ?? false
+
+                let isNarrowWindow = geo.size.width < 700
+
                 ZStack(alignment: .top) {
-                    if isLandscape {
+                    if deviceLandscape && !isNarrowWindow {
                         landscapeBody(geo)
                     } else {
                         portraitBody(geo)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 .overlay(alignment: .topLeading) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("w \(Int(geo.size.width)) h \(Int(geo.size.height))")
                         Text("safeTop \(Int(geo.safeAreaInsets.top)) safeBot \(Int(geo.safeAreaInsets.bottom))")
-                        Text(isLandscape ? "LANDSCAPE ✅" : "PORTRAIT ✅")
+                        Text(deviceLandscape ? "DEVICE LANDSCAPE ✅" : "DEVICE PORTRAIT ✅")
+                        Text(isNarrowWindow ? "NARROW WINDOW ✅" : "WIDE WINDOW ✅")
                     }
                     .font(.caption.weight(.bold))
                     .padding(8)
@@ -111,23 +118,21 @@ struct FriendsView: View {
     }
     @ViewBuilder
     func landscapeBody(_ geo: GeometryProxy) -> some View {
-        ScrollView {
-            friendsContent
-                .padding(.vertical, 16)
-            
-            // Optional: helps bring last row above keyboard/home indicator
-            Color.clear.frame(height: 120)
+
+        let drop = geo.size.height * 0.30   // 👈 20% vertical drop
+
+        return ZStack(alignment: .top) {
+
+            ScrollView {
+                friendsContent
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.top, drop)   // 👈 THIS moves the ScrollView down
+            .frame(maxWidth: .infinity)
         }
-        .safeAreaInset(edge: .top) {
-            Color.clear.frame(height: 44)   // ✅ THIS is the “make top visible” knob
-        }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: 16)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .padding(.horizontal, 16)
     }
-    
+        
     
     
     @ViewBuilder
