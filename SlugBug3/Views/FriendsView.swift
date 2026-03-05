@@ -51,26 +51,8 @@ struct FriendsView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .overlay(alignment: .topLeading) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("w \(Int(geo.size.width)) h \(Int(geo.size.height))")
-                        Text("safeTop \(Int(geo.safeAreaInsets.top)) safeBot \(Int(geo.safeAreaInsets.bottom))")
-                        Text(deviceLandscape ? "DEVICE LANDSCAPE ✅" : "DEVICE PORTRAIT ✅")
-                        Text(isNarrowWindow ? "NARROW WINDOW ✅" : "WIDE WINDOW ✅")
-                    }
-                    .font(.caption.weight(.bold))
-                    .padding(8)
-                    .background(.black.opacity(0.75))
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .padding()
-                }
+                
             }
-            
-            
-            
-            
-            
         }
         .alert("Delete Friend?", isPresented: $isShowingDeleteAlert) {
             Button("Delete", role: .destructive) {
@@ -136,26 +118,19 @@ struct FriendsView: View {
     
     
     @ViewBuilder
-    private func portraitBody(_ geo: GeometryProxy) -> some View {
-        let navBarH: CGFloat = 44
-        let topPad = geo.safeAreaInsets.top + navBarH + 12
-        
-        ScrollView {
-            friendsContent
-                .padding(.vertical, 16)
-            
-            // ✅ extra space so you can scroll further down
-            Color.clear.frame(height: 120)
+    func portraitBody(_ geo: GeometryProxy) -> some View {
+
+        let drop = geo.size.height * 0.10   // 👈 10% drop
+
+        return ZStack(alignment: .top) {
+
+            ScrollView {
+                friendsContent
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.top, drop)   // 👈 moves it down
         }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: 24)   // keeps last content off home indicator
-        }
-        
-        .padding(.horizontal, 16)
-        
-        .padding(.top, topPad)
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
     
     private func friendRow(index: Int) -> some View {
