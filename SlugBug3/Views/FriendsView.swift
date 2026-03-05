@@ -1,14 +1,35 @@
-// //
-//  FriendsView.swift
-//  SlugBug
-//
-//  Created with assistance from ChatGPT on 2025-12-09.
-//  Handles display, editing, and selection of the user's friends list.
-//
-//
-//
-//  Created by Kevin Leckenby on 9/22/25.
-//
+/*
+ FriendsView.swift
+ SlugBug
+
+ Layout improvements for iPad portrait, landscape, and Split View.
+
+ Key behaviors implemented:
+ - Detect true device orientation using UIWindowScene.interfaceOrientation.
+ - Use GeometryReader to size and position the ScrollView container.
+ - Apply percentage-based vertical drops to keep the Friends list visually centered
+   on large iPad landscape displays.
+ - Separate layout paths for portrait and landscape to keep spacing predictable.
+ - Maintain ScrollView usability while adjusting layout offsets.
+
+ Landscape layout adjustments:
+ - ScrollView vertically dropped approximately 30% to avoid crowding at top.
+ - Layout designed to work correctly in full-screen landscape and Split View.
+
+ Portrait layout adjustments:
+ - Smaller vertical drop (~10%) to keep list centered without wasting space.
+
+ Development Notes:
+ - Using window size alone (geo.size.width > geo.size.height) was unreliable
+   in iPad Split View, so device orientation detection was added.
+
+ Implementation assistance:
+ - Layout troubleshooting, orientation detection, and ScrollView positioning
+   strategy were developed with assistance from ChatGPT (OpenAI).
+ - Final layout tuned and tested by Kevin Leckenby.
+
+ Last refined: 2026
+*/
 
 
 

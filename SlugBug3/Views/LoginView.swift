@@ -1,9 +1,42 @@
-//
-//  LoginView.swift
-//  SlugBug3
-//
-//  Created by Kevin Leckenby on 9/30/25.
-//
+/*
+ LoginView.swift
+ SlugBug
+
+ Responsive login layout supporting iPhone and iPad portrait/landscape.
+
+ Key layout design:
+ - ScrollView used to prevent keyboard overlap in landscape.
+ - GeometryReader used to determine screen size and adjust typography.
+ - Login form width constrained (maxCardW) to prevent stretching on iPad.
+ - Form centered horizontally and vertically for balanced presentation.
+
+ UI Improvements:
+ - Google Sign-In button redesigned to increase visibility against
+   the background image using material background, border, and shadow.
+ - Primary email login uses borderedProminent style for visual hierarchy.
+
+ Visual hierarchy:
+   1. Log In (primary action)
+   2. Google Sign In (secondary action)
+   3. Sign Up / Forgot Password
+   4. Home navigation
+
+ Development Notes:
+ - ScrollView + centered card layout ensures the screen works in:
+     • iPhone portrait
+     • iPhone landscape
+     • iPad portrait
+     • iPad landscape
+     • iPad Split View
+
+ Implementation assistance:
+ - Layout centering, responsive width constraints, and Google sign-in
+   button visibility improvements developed with assistance from
+   ChatGPT (OpenAI).
+ - Final UI design tuned by Kevin Leckenby.
+
+ Last refined: 2026
+*/
 import SwiftUI
 import GoogleSignIn
 
