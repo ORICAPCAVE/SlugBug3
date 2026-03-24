@@ -35,12 +35,15 @@ struct ScoreView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
-        
-                
-
-            
             GeometryReader { geo in
-                let isLandscape = geo.size.width > geo.size.height
+            
+                let deviceLandscape =
+                (UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene)?
+                    .interfaceOrientation.isLandscape ?? false
+                
+                let windowLandscape = geo.size.width > geo.size.height
+                let useLandscape = deviceLandscape || windowLandscape
                 let scoresTopInsetPct: CGFloat = 0.80
                 // ✅ increase to move scores DOWN (try 0.10–0.18)
                 let linkUpPct: CGFloat = 0.28           // ✅ increase to move link UP (try 0.24–0.35)
@@ -52,82 +55,67 @@ struct ScoreView: View {
                 // Portrait fallback
                 let portraitTopDropFrac: CGFloat = 0.18
                 
-                if isLandscape {
-                    let scrollTopDropPct: CGFloat = 0.18  // try 0.12 – 0.18
-                    let scrollTopDrop = geo.size.height * scrollTopDropPct
-
-                    let topInset = geo.safeAreaInsets.top
-                    let bottomInset = geo.safeAreaInsets.bottom
-                    let windowW = min(geo.size.width * 0.75, 620)
-                    let linkLower: CGFloat = 120
-                    let linkGap: CGFloat = 20
-                    let scrollDrop: CGFloat = 800
-                    let linkHeight: CGFloat = 52
-                    let gapUnderScroll: CGFloat = 20
-                    let scoreH = max(200, geo.size.height - geo.safeAreaInsets.top
-                                     - scrollTopDrop
-                                     - gapUnderScroll
-                                     - linkHeight
-                                     - geo.safeAreaInsets.bottom
-                                     - 24
-                             )
-
-                    
+                
+                
+                if useLandscape {
                     VStack(spacing: 0) {
-                        Spacer().frame(height: geo.safeAreaInsets.top + scrollTopDrop)
+                        Text("LANDSCAPE ✅")
+                            .font(.headline.bold())
+                            .padding(8)
+                            .background(Color.green.opacity(0.8))
+                            .cornerRadius(8)
+                            .foregroundStyle(.white)
                         
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                Color.clear.frame(height: 12)
-
-                                ForEach(vm.items) { s in
-                                    Text(s.dateLabel)
-                                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                                        .foregroundColor(.red)
-                                        .multilineTextAlignment(.center)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal)
-                                        .contentShape(Rectangle())
-                                        .onTapGesture { pendingDelete = s }
-                                }
-                                Color.clear.frame(height: 24)
-                            }
-                            .padding(.top, 0)
-                        }
+                        // rest of your landscape content here
+                    }
                 
-                        .frame(width: windowW, height: scoreH)
-                        .clipped()
-                        
-                       
-                        
-                        Spacer().frame(height: linkLower)
-
+                let topDrop = geo.size.height * 0.30
+                let windowW = min(geo.size.width * 0.75, 620)
+                let scoreH = geo.size.height * 0.25
+                let linkLower: CGFloat = 2
                 
-                        Link(destination: URL(string: "https://steamintegrator.net/HighScores.html")!) {
-                            Label("View High Scorers", systemImage: "trophy.fill")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .frame(width: windowW)
-
-                                Spacer(minLength: bottomInset + 8)
+                VStack(spacing: 0) {
+                    Color.clear
+                        .frame(height: topDrop)
+                    
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(vm.items) { s in
+                                Text(s.dateLabel)
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { pendingDelete = s }
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                            .overlay(alignment: .topLeading) {
-                                Text("isLandscape = \(geo.size.width > geo.size.height ? "true" : "false")")
-                                    .font(.title.bold())
-                                    .padding(10)
-                                    .background(Color.mint.opacity(0.9))
-                                    .cornerRadius(10)
-                                    .padding(.top, geo.safeAreaInsets.top + 8)
-                                    .padding(.leading, 12)
-                                    .zIndex(9999)
-                            }
+                            
+                            Color.clear.frame(height: 24)
                         }
+                    }
+                    .frame(width: windowW, height: scoreH)
+                    .background(Color.black.opacity(0.20))
+                    .clipped()
+                    
+                    Spacer().frame(height: linkLower)
+                    
+                    Link(destination: URL(string: "https://steamintegrator.net/HighScores.html")!) {
+                        Label("View High Scorers", systemImage: "trophy.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .frame(width: windowW)
+                    
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        
 
  else {
                     // PORTRAIT: scroll + link overlay
@@ -170,6 +158,7 @@ struct ScoreView: View {
                         }
                     }
                 }
+                
             }
         }
         .navigationTitle("Scores")
