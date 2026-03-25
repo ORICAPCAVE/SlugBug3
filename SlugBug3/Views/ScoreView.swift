@@ -166,8 +166,13 @@ struct ScoreView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onHome) { Label("Home", systemImage: "house") }
-                    .buttonStyle(.borderedProminent)
+                Button(action: onHome) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundStyle(.white)   // 👈 THIS fixes it
+                }
             }
         }
         .alert(
@@ -200,7 +205,7 @@ struct ScoreView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Buggy Photos")
+                    Text("Your Buggy Scores")
                         .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
                 }

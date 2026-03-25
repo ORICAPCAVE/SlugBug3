@@ -7,6 +7,11 @@
 import SwiftUI
 
 struct TributeView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private func onBack() {
+        dismiss()
+    }
     var body: some View {
         ZStack {
             Image("slugbug1")
@@ -57,6 +62,26 @@ And she would usually win the games she announced.
         }
         .navigationTitle("Tribute")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { print("✅ TributeView appeared") }
+        .navigationBarBackButtonHidden(true)
+
+        .toolbar {
+            // ✅ Back button
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: onBack) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+
+            // ✅ Center title
+            ToolbarItem(placement: .principal) {
+                Text("Tribute")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
     }
 }

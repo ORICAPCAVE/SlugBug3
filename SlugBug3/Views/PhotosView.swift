@@ -39,7 +39,11 @@ import PhotosUI
 struct PhotosView: View {
     
     @Environment(\.verticalSizeClass) private var vSize
-    
+    @Environment(\.dismiss) private var dismiss
+
+    private func onBack() {
+        dismiss()
+    }
     
     @ObservedObject var vm: PhotosVM
     @State private var selectedItem: PhotosPickerItem?
@@ -68,7 +72,7 @@ struct PhotosView: View {
     var body: some View {
         ZStack {
             Color.green.opacity(0.2)
-                        .onAppear { print("✅ PhotosView appeared") }
+                .onAppear { print("✅ PhotosView appeared") }
             Image("slugbug1")
                 .resizable()
                 .scaledToFill()
@@ -89,26 +93,26 @@ struct PhotosView: View {
             //   while remaining larger on iPad for improved visibility.
             // - All sheet presentations are attached at the top-level view to
             //   avoid lifecycle and hit-testing issues inside nested containers.
-
+            
             GeometryReader { geo in
                 let isLandscape =
-                    (UIApplication.shared.connectedScenes
-                        .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene)?
-                        .interfaceOrientation.isLandscape ?? (geo.size.width > geo.size.height)
+                (UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene)?
+                    .interfaceOrientation.isLandscape ?? (geo.size.width > geo.size.height)
                 let isPad = UIDevice.current.userInterfaceIdiom == .pad
                 let isNarrowWindow = geo.size.width < 700
                 // ✅ Your two knobs (percent of screen height)
                 let iPhoneDropPct: CGFloat = 0.20   // 20% down on iPhone
                 let iPadDropPct: CGFloat   = 0.20   // 45% down on iPad
-
+                
                 let deviceDrop = geo.size.height * (isPad ? iPadDropPct : iPhoneDropPct)
                 let outerPad: CGFloat = 12
-
+                
                 // Fonts / sizes
                 let titleFont: Font = isLandscape ? .title2.bold() : .largeTitle.bold()
                 let cameraSize: CGFloat = 80
                 let iconSize: CGFloat = isLandscape ? 32 : 48
-
+                
                 // Capture box height: responsive, but with sensible caps
                 let captureBoxHeight: CGFloat = {
                     let available = geo.size.height - geo.safeAreaInsets.top - geo.safeAreaInsets.bottom
@@ -117,11 +121,11 @@ struct PhotosView: View {
                     // ✅ iPhone-only smaller caps
                     let capPhonePortrait: CGFloat = 170
                     let capPhoneLandscape: CGFloat = 110
-
+                    
                     // iPad keeps your existing caps
                     let capPadPortrait: CGFloat = 240
                     let capPadLandscape: CGFloat = 150
-
+                    
                     let cap: CGFloat = {
                         if isPad {
                             return isLandscape ? capPadLandscape : capPadPortrait
@@ -129,14 +133,14 @@ struct PhotosView: View {
                             return isLandscape ? capPhoneLandscape : capPhonePortrait
                         }
                     }()
-
+                    
                     // min can also be smaller on iPhone so it can compress more if needed
                     let minH: CGFloat = isPad ? 120 : 90
-
+                    
                     return max(minH, min(cap, raw))
                 }()
-
-
+                
+                
                 // Global top spacing:
                 // - big in iPad landscape
                 // - small in iPhone landscape
@@ -154,31 +158,31 @@ struct PhotosView: View {
                         return 16
                     }
                 }()
-
+                
                 // ✅ Portrait-only "move up/down" knob (does NOT affect landscape)
                 let portraitLift: CGFloat = 40  // increase to move portrait UP more
                 let globalLift = geo.size.height * 0.10   // 🔧 move UP 10%
                 let baseTop = (geo.safeAreaInsets.top + outerPad + extraTop + deviceDrop
-                              - (isLandscape ? 0 : portraitLift))
-
+                               - (isLandscape ? 0 : portraitLift))
+                
                 let cappedTop = baseTop.clamped(to: isPad ? 0...620 : 0...260)
-
+                
                 let topSpacerHeight = max(0, cappedTop - geo.size.height * 0.10) // ✅ always moves
-
-
+                
+                
                 // ... now use topSpacerHeight here:
                 // Spacer().frame(height: topSpacerHeight)
-
+                
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: isLandscape ? 10 : 16) {
-
+                        
                         // ✅ Use the computed top spacer (NOT a hardcoded extraTop here)
                         Spacer().frame(height: topSpacerHeight)
-
+                        
                         Text("Buggy Photos")
                             .font(titleFont)
                             .foregroundColor(.white)
-
+                        
                         ZStack {
                             RoundedRectangle(cornerRadius: 24)
                                 .fill(.black.opacity(0.5))
@@ -188,16 +192,16 @@ struct PhotosView: View {
                                         .foregroundColor(.yellow)
                                 )
                                 .frame(height: captureBoxHeight)
-
+                            
                             VStack(spacing: 8) {
                                 Image(systemName: "camera.viewfinder")
                                     .font(.system(size: iconSize))
                                     .foregroundColor(.yellow)
-
+                                
                                 Text("Center the Volkswagen")
                                     .foregroundColor(.white)
                                     .font(.headline)
-
+                                
                                 if !isLandscape {
                                     Text("Tap the button when you see a Bug")
                                         .foregroundColor(.white.opacity(0.8))
@@ -207,7 +211,7 @@ struct PhotosView: View {
                             .padding(.horizontal, 12)
                         }
                         .padding(.horizontal, 12)
-
+                        
                         Button {
                             print("CAPTURE TAPPED ✅")
                             if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -220,7 +224,7 @@ struct PhotosView: View {
                                 Circle()
                                     .fill(.white.opacity(0.9))
                                     .frame(width: cameraSize, height: cameraSize)
-
+                                
                                 Circle()
                                     .stroke(.black, lineWidth: 2)
                                     .frame(width: cameraSize + 8, height: cameraSize + 8)
@@ -228,12 +232,12 @@ struct PhotosView: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.vertical, 6)
-
+                        
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Your Buggy Library")
                                 .font(.headline)
                                 .foregroundColor(.white)
-
+                            
                             if vm.photos.isEmpty {
                                 Text("No photos yet. Spot a Bug and tap the button!")
                                     .foregroundColor(.white.opacity(0.8))
@@ -250,7 +254,7 @@ struct PhotosView: View {
                             }
                         }
                         .padding(.horizontal, 12)
-
+                        
                         // ✅ Bottom padding should ONLY be safe area + outer pad (not extraTop)
                         Spacer().frame(height: geo.safeAreaInsets.bottom + outerPad)
                     }
@@ -258,13 +262,38 @@ struct PhotosView: View {
                     .frame(maxWidth: .infinity, alignment: .top)
                     .frame(minHeight: geo.size.height, alignment: .top)
                 }
-
-
+                
+                
             }
             
+            
         }
-        .navigationTitle("Pictures")
+        .navigationTitle("Photos")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        
+        .toolbar {
+            // ✅ Back button
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: onBack) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+            
+            // ✅ Center title
+            ToolbarItem(placement: .principal) {
+                Text("Buggy Photos")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .tint(.white)
         // Put this RIGHT AFTER the closing brace of your outer ZStack (before the final closing brace of body)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -296,14 +325,6 @@ struct PhotosView: View {
         } message: {
             Text("This can’t be undone.")
         }
-        .navigationBarTitleDisplayMode(.inline)     // ✅ and this
-    
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarBackground(.teal.opacity(0.85), for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .tint(.white)
-    
-        
     }
     
 

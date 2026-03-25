@@ -13,7 +13,10 @@ import AVKit
 
 struct PlayBugView: View {
     @ObservedObject var vm: PlayBugVM
-
+    @Environment(\.dismiss) private var dismiss
+    private func onBack(){
+        dismiss()
+    }
     var body: some View {
         ZStack {
             // --- Your existing content ---
@@ -62,6 +65,29 @@ struct PlayBugView: View {
                 }
                 .position(x: w * 0.50, y: buttonsY)
 
+            }
+            .navigationTitle("Play")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+
+            .toolbar {
+                // ✅ Back button (visible, styled)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onBack) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .foregroundStyle(.white)   // 👈 makes it visible
+                    }
+                }
+
+                // ✅ Center title
+                ToolbarItem(placement: .principal) {
+                    Text("Play Slug Bug")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                }
             }
 
             // --- REWARD OVERLAY ---

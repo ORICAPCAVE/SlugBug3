@@ -31,6 +31,11 @@
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private func onBack() {
+        dismiss()
+    }
     var body: some View {
         ZStack {
             Image("slugbug1")
@@ -48,47 +53,46 @@ struct AboutView: View {
 
                 let topDrop = deviceLandscape ? geo.size.height * 0.30 : 30
                 let rightShift = deviceLandscape ? geo.size.width * 0.10 : 0
-
+                let availableWidth = max(0, geo.size.width - 32)
+                let boxWidth = min(600, availableWidth)
                 ScrollView {
                     // ✅ vertical drop that remains scrollable
                     Color.clear.frame(height: topDrop)
 
                     // ✅ horizontal shift that won't clip
-                    HStack(spacing: 0) {
-                        Color.clear.frame(width: rightShift)
+                    VStack(spacing: 14) {
+                        Text("About Slug Bug")
+                            .font(.largeTitle.bold())
+                            .foregroundColor(.white)
 
-                        VStack(spacing: 14) {
-                            Text("About Slug Bug")
-                                .font(.largeTitle.bold())
-                                .foregroundColor(.white)
+                        Text("Version 3")
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(.white.opacity(0.9))
 
-                            Text("Version 3")
-                                .font(.title3.weight(.semibold))
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("How it works")
+                                .font(.headline)
+                                .foregroundColor(.yellow)
+
+                            Text("Spot a Volkswagen Beetle, call “Buggy!”, and track your games, scores, and photos.")
                                 .foregroundColor(.white.opacity(0.9))
 
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("How it works")
-                                    .font(.headline)
-                                    .foregroundColor(.yellow)
+                            Text("Credits")
+                                .font(.headline)
+                                .foregroundColor(.yellow)
 
-                                Text("Spot a Volkswagen Beetle, call “Buggy!”, and track your games, scores, and photos.")
-                                    .foregroundColor(.white.opacity(0.9))
-
-                                Text("Credits")
-                                    .font(.headline)
-                                    .foregroundColor(.yellow)
-
-                                Text("Created by Leckenby and Associates LLC.")
-                                    .foregroundColor(.white.opacity(0.9))
-                            }
-                            .padding()
-                            .background(.black.opacity(0.45))
-                            .cornerRadius(16)
-                            .padding(.top, 8)
+                            Text("Created by Leckenby and Associates LLC.")
+                                .foregroundColor(.white.opacity(0.9))
                         }
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: min(600, geo.size.width - rightShift - 32), alignment: .center)
+                        .padding()
+                        .background(.black.opacity(0.45))
+                        .cornerRadius(16)
+                        .padding(.top, 8)
                     }
+                    .padding(.horizontal, 16)
+                    .frame(width: boxWidth)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .offset(x: rightShift)
 
                     // ✅ bottom breathing room so nothing gets hidden
                     Color.clear.frame(height: 24)
@@ -97,5 +101,29 @@ struct AboutView: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+
+        .toolbar {
+            // ✅ Back button
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: onBack) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+
+            // ✅ Center title
+            ToolbarItem(placement: .principal) {
+                Text("About")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .tint(.white)
     }
 }

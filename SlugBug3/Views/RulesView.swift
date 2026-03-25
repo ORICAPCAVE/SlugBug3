@@ -13,6 +13,11 @@ import SwiftUI
 
 struct RulesView: View {
     @StateObject private var vm = StaticTextVM()
+    @Environment(\.dismiss) private var dismiss
+
+    private func onBack() {
+        dismiss()
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -68,10 +73,35 @@ struct RulesView: View {
                 }
             }
             .navigationTitle("Rules")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+
             .toolbar {
+                // ✅ Back button (same as ScoreView / PlayBugView)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onBack) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .foregroundStyle(.white)
+                    }
+                }
+
+                // ✅ Center title (optional but recommended for consistency)
+                ToolbarItem(placement: .principal) {
+                    Text("Rules")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+
+                // ✅ Your existing Share button (moved into same toolbar)
                 if !vm.text.isEmpty {
-                    ShareLink(item: vm.text) {
-                        Image(systemName: "square.and.arrow.up")
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        ShareLink(item: vm.text) {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundStyle(.white)
+                        }
                     }
                 }
             }

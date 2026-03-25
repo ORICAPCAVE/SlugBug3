@@ -88,13 +88,29 @@ struct FriendsView: View {
             Text("Are you sure you want to delete \(pendingDeleteName ?? "this friend")?")
         }
  
-            .navigationTitle("Friends")                 // ✅ add this
-            .navigationBarTitleDisplayMode(.inline)     // ✅ and this
-        
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(.teal.opacity(0.85), for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .tint(.white)
+        .navigationTitle("Friends")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: onBack) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+
+            ToolbarItem(placement: .principal) {
+                Text("Friends")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .tint(.white)
         
         
     }
@@ -153,7 +169,9 @@ struct FriendsView: View {
             .padding(.top, drop)   // 👈 moves it down
         }
     }
-    
+    private func onBack() {
+        dismiss()
+    }
     private func friendRow(index: Int) -> some View {
         let friend = $vm.items[index]
         
