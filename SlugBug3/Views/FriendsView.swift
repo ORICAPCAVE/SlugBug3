@@ -1,37 +1,23 @@
-/*
- FriendsView.swift
- SlugBug
-
- Layout improvements for iPad portrait, landscape, and Split View.
-
- Key behaviors implemented:
- - Detect true device orientation using UIWindowScene.interfaceOrientation.
- - Use GeometryReader to size and position the ScrollView container.
- - Apply percentage-based vertical drops to keep the Friends list visually centered
-   on large iPad landscape displays.
- - Separate layout paths for portrait and landscape to keep spacing predictable.
- - Maintain ScrollView usability while adjusting layout offsets.
-
- Landscape layout adjustments:
- - ScrollView vertically dropped approximately 30% to avoid crowding at top.
- - Layout designed to work correctly in full-screen landscape and Split View.
-
- Portrait layout adjustments:
- - Smaller vertical drop (~10%) to keep list centered without wasting space.
-
- Development Notes:
- - Using window size alone (geo.size.width > geo.size.height) was unreliable
-   in iPad Split View, so device orientation detection was added.
-
- Implementation assistance:
- - Layout troubleshooting, orientation detection, and ScrollView positioning
-   strategy were developed with assistance from ChatGPT (OpenAI).
- - Final layout tuned and tested by Kevin Leckenby.
-
- Last refined: 2026
-*/
-
-
+//
+//  FriendsView.swift
+//  SlugBug3
+//
+//  Created by Leckenby and Associates LLC
+//  Enhanced with assistance from ChatGPT (OpenAI)
+//
+//  Purpose:
+//  Displays and manages the user’s list of friends.
+//  Supports adding, editing, selecting, and deleting friends.
+//
+//  Key Enhancements (March 2026):
+//  - Stabilized delete flow with immediate UI updates and async Firebase persistence
+//  - Improved reliability of friend removal from Realtime Database
+//  - Added safer state handling for pending deletions and UI rollback
+//
+//  Notes:
+//  Works with FriendsVM and Firebase Realtime Database under:
+//  users/{uid}/friends
+//
 
 
 import SwiftUI
@@ -186,6 +172,15 @@ struct FriendsView: View {
             }
             
             Spacer()
+            Button("Save") {
+                Task { await vm.save(friend.wrappedValue) }
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.blue.opacity(0.7))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
             
             Button {
                 friend.invited.wrappedValue.toggle()

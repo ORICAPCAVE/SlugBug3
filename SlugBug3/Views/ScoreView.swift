@@ -2,16 +2,16 @@
 //  ScoreView.swift
 //  SlugBug3
 //
-//  Created by Kevin Leckenby on 2025-10-09.
-//  Some portions of this file were generated or adapted
-//  with assistance from OpenAI’s ChatGPT (GPT-5) to illustrate
-//  Firebase data display using SwiftUI (List / ScrollView patterns).
-//  All subsequent modifications and integrations are by
-//  Leckenby and Associates LLC.
+//  Created by Leckenby and Associates LLC
+//  Enhanced with assistance from ChatGPT (OpenAI)
 //
-// AI-assisted development note:
-// The initial Firebase-List view pattern was suggested by OpenAI’s ChatGPT.
-// Implementation reviewed and customized by Kevin Leckenby, Leckenby & Associates LLC.
+//  Purpose:
+//  Displays list of SlugBug scores retrieved from Firebase.
+//
+//  Notes:
+//  Minor layout and debugging adjustments discussed during development,
+//  including scroll positioning and landscape behavior.
+//
 import SwiftUI
 
 struct ScoreView: View {

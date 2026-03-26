@@ -1,35 +1,24 @@
 //
-// // PhotosView.swift
-// SlugBug
+//  PhotosView.swift
+//  SlugBug3
 //
-// Created by Kevin Leckenby, Leckenby & Associates LLC
-// Enhanced with assistance from ChatGPT (OpenAI)
+//  Created by Leckenby and Associates LLC
+//  Enhanced with assistance from ChatGPT (OpenAI)
 //
-// Purpose:
-// Provides the user interface for capturing, viewing, sharing, uploading,
-// and deleting Buggy photos. Displays a scrollable photo library, supports
-// fullscreen detail viewing, sharing, and Firebase upload status.
+//  Purpose:
+//  Displays BugPhoto capture interface and photo library UI.
+//  Provides camera access, photo preview, and interaction with PhotosVM.
 //
-// Recent Updates (2026-01):
-// - Removed split (left/right) layout in favor of a unified stacked design.
-// - Implemented fully responsive layout for iPhone and iPad in both
-//   portrait and landscape orientations.
-// - Added device-specific and orientation-aware spacing controls to ensure
-//   the capture button and library are always reachable.
-// - Refined capture guide box sizing (smaller on iPhone, larger on iPad).
-// - Restored and centralized sheet presentations for camera capture,
-//   photo library selection, sharing, and detail views.
-// - Ensured compatibility with iOS 16+ (PhotosPicker onChange fix).
-// - Improved Preview reliability by aligning navigation behavior with
-//   real-device presentation.
+//  Key Enhancements (March 2026):
+//  - Integrated with updated PhotosVM upload pipeline
+//  - Supports cloud-backed photo workflow (local + Firebase)
+//  - Reflects upload state via UI (uploaded vs pending)
+//  - Improved reliability of capture → save → upload flow
 //
-// Notes:
-// - Photo capture is integrated via a system camera picker.
-// - Photo library access uses PhotosPicker (iOS 16+).
-// - Photos are stored locally and optionally uploaded to Firebase Storage.
-// - Each image can be linked to a Buggy score for verification.
-// - Photos can be shared, viewed fullscreen, or permanently deleted
-//   from both device storage and cloud storage.
+//  Notes:
+//  Works in conjunction with PhotosVM to manage both local and cloud photo states.
+//  Designed for future expansion (multi-device sync, remote loading, etc.)
+//
 
 import UIKit
 import SwiftUI
@@ -57,14 +46,12 @@ struct PhotosView: View {
     private enum ActiveSheet: Identifiable {
         case camera
         case library
-        case share(BugPhoto)
         case detail(BugPhoto)
-        
+
         var id: String {
             switch self {
             case .camera: return "camera"
             case .library: return "library"
-            case .share(let p): return "share-\(p.id)"
             case .detail(let p): return "detail-\(p.id)"
             }
         }
@@ -161,7 +148,6 @@ struct PhotosView: View {
                 
                 // ✅ Portrait-only "move up/down" knob (does NOT affect landscape)
                 let portraitLift: CGFloat = 40  // increase to move portrait UP more
-                let globalLift = geo.size.height * 0.10   // 🔧 move UP 10%
                 let baseTop = (geo.safeAreaInsets.top + outerPad + extraTop + deviceDrop
                                - (isLandscape ? 0 : portraitLift))
                 
@@ -307,10 +293,15 @@ struct PhotosView: View {
                     vm.handleCapturedImage(image)
                     activeSheet = nil
                 }
-            case .share(let photo):
-                ShareSheet(items: [photo.image])
             case .detail(let photo):
                 BugPhotoDetailView(photo: photo)
+            }
+        }
+        .sheet(isPresented: $vm.showExporter, onDismiss: {
+            vm.exportURL = nil
+        }) {
+            if let url = vm.exportURL {
+                ShareSheet(items: [url])
             }
         }
         .alert("Delete photo?", isPresented: Binding(
@@ -410,7 +401,7 @@ struct PhotosView: View {
                     .frame(width: 140, height: 100)
                     .clipped()
                     .cornerRadius(12)
-                
+
                 if photo.uploaded {
                     Image(systemName: "cloud.fill")
                         .foregroundColor(.green)
@@ -420,7 +411,6 @@ struct PhotosView: View {
                         .padding(4)
                 }
             }
-            
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(.white.opacity(0.6), lineWidth: 1)
@@ -428,36 +418,36 @@ struct PhotosView: View {
             .onTapGesture {
                 activeSheet = .detail(photo)
             }
-            
+
             Text(photo.createdAt, style: .date)
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.9))
-            
+
             if let scoreId = photo.scoreId {
                 Text("Score: \(scoreId)")
                     .font(.caption2)
                     .foregroundColor(.white.opacity(0.7))
             }
-            
+
             HStack(spacing: 6) {
                 Button {
-                    activeSheet = .share(photo)
+                    vm.exportPhoto(photo: photo)
                 } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
                         .font(.caption2)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
-                
+
                 Button {
-                    vm.upload(photo: photo)
+                    vm.uploadToFirebase(photo: photo)
                 } label: {
                     Label(photo.uploaded ? "Uploaded" : "Upload",
                           systemImage: photo.uploaded ? "checkmark.seal" : "icloud.and.arrow.up")
-                    .font(.caption2)
+                        .font(.caption2)
                 }
                 .buttonStyle(.bordered)
-                
+
                 Button(role: .destructive) {
                     photoToDelete = photo
                 } label: {
@@ -470,12 +460,7 @@ struct PhotosView: View {
         .padding(8)
         .background(.black.opacity(0.4))
         .cornerRadius(14)
-        
     }
-    
-    
-  
-
 }
 private extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {

@@ -1,12 +1,26 @@
 
 //
 //  FriendsVM.swift
-//  SlugBug
+//  SlugBug3
 //
-//  Created with assistance from ChatGPT on 2025-12-09.
-//  View model for FriendsView: loads, saves, and deletes friends in Firebase Realtime Database.
+//  Created by Leckenby and Associates LLC
+//  Enhanced with assistance from ChatGPT (OpenAI)
 //
-//Kevin Leckenby 
+//  Purpose:
+//  ViewModel responsible for managing friend data including:
+//  - Loading friends from Firebase Realtime Database
+//  - Saving and updating friend records
+//  - Deleting friends with async persistence
+//
+//  Key Enhancements (March 2026):
+//  - Fixed delete operation to correctly remove records from Firebase
+//  - Improved async handling and error recovery for deletions
+//  - Ensured UI consistency with backend state during mutations
+//
+//  Notes:
+//  Data is stored under:
+//  users/{uid}/friends
+//
 import SwiftUI
 import Foundation
 import FirebaseAuth
@@ -94,21 +108,17 @@ final class FriendsVM: ObservableObject {
         
     }
     func deleteFriend(id: String) async throws {
-        let ref = dbRef
-            .child("friends")
-            .child(id)
-        
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            ref.removeValue { error, _ in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume(returning: ())
-                }
+        let trimmedID = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !userId.isEmpty else { return }
+        guard !trimmedID.isEmpty else { return }
+
+        try await service.remove(friendID: trimmedID, for: userId)
+        await load()
+    
             }
         }
-    }
-}
+    
+
         
     
 

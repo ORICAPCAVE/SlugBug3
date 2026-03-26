@@ -1,42 +1,43 @@
-// PhotosVM.swift
-// SlugBug
 //
-// Created by Kevin Leckenby, Leckenby & Associates LLC
-// Enhanced with assistance from ChatGPT (OpenAI)
+//  PhotosVM.swift
+//  SlugBug3
 //
-// Purpose:
-// ViewModel responsible for managing Buggy photo data, including local
-// persistence, metadata tracking, and Firebase Storage uploads. Acts as the
-// single source of truth for the PhotosView UI.
+//  Created by Leckenby and Associates LLC
+//  Enhanced with assistance from ChatGPT (OpenAI)
 //
-// Responsibilities:
-// - Persist captured photos to local storage with JSON-backed metadata.
-// - Load and restore photos across app launches.
-// - Track upload status and synchronize with Firebase Storage.
-// - Support deletion from both local storage and cloud storage.
-// - Associate photos with optional Buggy score identifiers.
+//  Purpose:
+//  ViewModel responsible for managing BugPhoto lifecycle including:
+//  - Local persistence (disk storage + metadata JSON)
+//  - Firebase Cloud Storage uploads (user-scoped photo storage)
+//  - Realtime Database metadata tracking (photosMeta)
+//  - Upload state tracking (uploaded flag)
+//  - Exporting and deletion of photos
 //
-// Recent Updates (2026-01):
-// - Aligned public API with PhotosView capture and library pickers
-//   (handleCapturedImage(_:)).
-// - Improved in-memory and on-disk synchronization logic.
-// - Hardened upload and delete flows with clearer error handling.
-// - Verified compatibility with SwiftUI sheet-based presentation.
+//  Key Enhancements (March 2026):
+//  - Integrated Firebase Storage upload pipeline (users/{uid}/photos/{photoId}.jpg)
+//  - Added metadata persistence to Realtime Database (photosMeta node)
+//  - Implemented upload success handling with markUploaded()
+//  - Ensured delete flow syncs local disk, Firebase Storage, and metadata
+//  - Added runtime diagnostics for bucket/path debugging
+//  - Fixed structural issue (extra brace) that broke class scope
+//  - Cleaned duplicate imports and improved code organization
 //
-// Notes:
-// - Images are stored as JPEG files in the app Documents directory.
-// - Metadata is persisted in bug_photos.json using ISO-8601 dates.
-// - Firebase uploads require an authenticated user session.
-
+//  Notes:
+//  This ViewModel now supports a hybrid storage model:
+//  - Local disk for fast access
+//  - Firebase Storage for file persistence
+//  - Realtime Database for structured metadata and future sync capabilities
 //
 import Foundation
 import UIKit
 import FirebaseAuth
 import FirebaseStorage
 import Combine
+import FirebaseDatabase
 
 final class PhotosVM: ObservableObject {
-
+    @Published var exportURL: URL?
+    @Published var showExporter = false
     @Published var photos: [BugPhoto] = []
 
     /// Set this from outside when you know which score this photo will verify.
@@ -55,13 +56,14 @@ final class PhotosVM: ObservableObject {
 
     init() {
         print("✅ PhotosVM init")
-            Task { await loadAsync() }    }
+        Task { await loadAsync() }
+    }
 
     // MARK: - Public API
 
     func handleCapturedImage(_ image: UIImage) {
         let id = UUID().uuidString
-        var photo = BugPhoto(
+        let photo = BugPhoto(
             id: id,
             image: image,
             createdAt: Date(),
@@ -70,14 +72,11 @@ final class PhotosVM: ObservableObject {
             uploaded: false
         )
 
-        // Save to disk
         saveToDisk(photo: photo)
-
-        // Insert at top (newest first)
         photos.insert(photo, at: 0)
     }
 
-    func upload(photo: BugPhoto) {
+    func uploadToFirebase(photo: BugPhoto) {
         guard let uid = Auth.auth().currentUser?.uid else {
             print("⚠️ No logged-in user; cannot upload.")
             return
@@ -89,31 +88,60 @@ final class PhotosVM: ObservableObject {
         }
 
         let storage = Storage.storage()
+        print("✅ bucket:", storage.reference().bucket)
+
         let ref = storage.reference()
             .child("users")
             .child(uid)
             .child("photos")
             .child("\(photo.id).jpg")
 
-        ref.putData(jpegData, metadata: nil) { [weak self] metadata, error in
-            if let error = error {
-                print("❌ Upload failed: \(error)")
+        print("⬆️ Starting upload to:", ref.fullPath)
+        print("⬆️ Bytes:", jpegData.count)
+
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+
+        ref.putData(jpegData, metadata: metadata) { [weak self] metadata, error in
+            if let error = error as NSError? {
+                print("❌ putData failed at path:", ref.fullPath)
+                print("❌ code:", error.code)
+                print("❌ message:", error.localizedDescription)
                 return
             }
+            ref.putData(jpegData, metadata: metadata) { [weak self] metadata, error in
+                if let error = error as NSError? {
+                    print("❌ putData failed at path:", ref.fullPath)
+                    print("❌ code:", error.code)
+                    print("❌ message:", error.localizedDescription)
+                    return
+                }
 
-            print("✅ Uploaded Bug photo \(photo.id)")
-
-            // Mark uploaded locally
-            DispatchQueue.main.async {
+                print("✅ Upload success:", metadata?.path ?? ref.fullPath)
                 self?.markUploaded(photoID: photo.id)
+
+                let dbRef = Database.database().reference()
+                    .child("users")
+                    .child(uid)
+                    .child("photosMeta")
+                    .child(photo.id)
+
+                dbRef.setValue([
+                    "id": photo.id,
+                    "storagePath": ref.fullPath,
+                    "uploaded": true,
+                    "createdAt": ISO8601DateFormatter().string(from: Date())
+                ])
             }
+
+            print("✅ Upload success:", metadata?.path ?? ref.fullPath)
+            self?.markUploaded(photoID: photo.id)
         }
     }
 
     // MARK: - Disk persistence
 
     private func saveToDisk(photo: BugPhoto) {
-        // 1. Save image
         let filename = "\(photo.id).jpg"
         let fileURL = docsURL.appendingPathComponent(filename)
 
@@ -128,7 +156,6 @@ final class PhotosVM: ObservableObject {
             print("❌ Failed to write image file: \(error)")
         }
 
-        // 2. Save / update metadata
         var records = loadRecords()
         let record = BugPhotoRecord(
             id: photo.id,
@@ -138,11 +165,13 @@ final class PhotosVM: ObservableObject {
             scoreId: photo.scoreId,
             uploaded: photo.uploaded
         )
-        // Remove any old record with same id
+
         records.removeAll { $0.id == photo.id }
         records.append(record)
         saveRecords(records)
     }
+
+    // ...rest of your methods stay here, still inside PhotosVM...
 
     private func loadFromDisk() {
         let records = loadRecords()
@@ -209,7 +238,26 @@ final class PhotosVM: ObservableObject {
         }
         saveRecords(records)
     }
-    func delete(photo: BugPhoto) {
+    func exportPhoto(photo: BugPhoto) {
+        guard let data = photo.image.jpegData(compressionQuality: 0.9) else {
+            print("⚠️ Could not create JPEG data.")
+            return
+        }
+        
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(photo.id).jpg")
+        
+        do {
+            try data.write(to: url, options: .atomic)
+            DispatchQueue.main.async {
+                self.exportURL = url
+                self.showExporter = true
+            }
+        } catch {
+            print("❌ Could not prepare export file: \(error.localizedDescription)")
+        }
+    }
+        func delete(photo: BugPhoto) {
         // 1. Delete image file + metadata
         var records = loadRecords()
 
@@ -237,10 +285,17 @@ final class PhotosVM: ObservableObject {
                 .child(uid)
                 .child("photos")
                 .child("\(photo.id).jpg")
+            print("fullPath:", ref.fullPath)
 
             ref.delete { error in
-                if let error = error {
-                    print("⚠️ Failed to delete from Storage (may not exist): \(error)")
+                if let error = error as NSError? {
+                    let message = error.localizedDescription.lowercased()
+
+                    if message.contains("does not exist") || message.contains("object") {
+                        print("ℹ️ File already missing in Firebase for \(photo.id)")
+                    } else {
+                        print("⚠️ Failed to delete from Storage: \(error.localizedDescription)")
+                    }
                 } else {
                     print("✅ Deleted Bug photo \(photo.id) from Storage")
                 }
