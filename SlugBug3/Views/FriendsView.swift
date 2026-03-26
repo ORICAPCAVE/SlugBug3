@@ -212,6 +212,8 @@ struct FriendsView: View {
     }
     
     private func deleteFriend(id: String) async {
+        let trimmedID = id.trimmingCharacters(in: .whitespacesAndNewlines)
+
         // 1) Remove from UI immediately (smooth UX)
         let removed = await MainActor.run { () -> Friend? in
             let item = vm.items.first { $0.id == id }
@@ -222,10 +224,11 @@ struct FriendsView: View {
             pendingDeleteName = nil
             return item
         }
+        guard !trimmedID.isEmpty else { return }
         
         // 2) Persist deletion (Firebase)
         do {
-            try await vm.deleteFriend(id: id)
+            try await vm.deleteFriend(id: trimmedID)
         } catch {
             // Optional rollback so the friend comes back if delete fails
             if let removed {
