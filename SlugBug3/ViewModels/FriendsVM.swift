@@ -33,30 +33,41 @@ final class FriendsVM: ObservableObject {
     @Published var canInvite = true
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+    @Published var showingInviteComposer = false
+    @Published var inviteMessage = ""
+    @Published var invitePhoneNumber = ""
+    @Published var pendingInviteFriendID: String?
+    @Published var inviteErrorMessage: String?
+    @Published var showingInviteError = false
+
+    @Published var showingEmailComposer = false
+    @Published var inviteEmailAddress = ""
+    @Published var inviteEmailSubject = ""
+    @Published var showingInviteChoiceAlert = false
     private let service: RealtimeDBService
     private let userId: String
     private let dbRef = Database.database().reference()
+
     init(
         userId: String? = Auth.auth().currentUser?.uid,
         service: RealtimeDBService = RealtimeDBService()
     ) {
         self.service = service
-        self.userId  = userId ?? ""
-        
+        self.userId = userId ?? ""
+
         Task {
             await load()
         }
     }
-    
+
     // MARK: - Load
-    
+
     func load() async {
         guard !userId.isEmpty else { return }
-        
+
         isLoading = true
         defer { isLoading = false }
-        
+
         do {
             let friends = try await service.loadFriends(for: userId)
             self.items = friends.sorted {
@@ -67,21 +78,67 @@ final class FriendsVM: ObservableObject {
             self.errorMessage = error.localizedDescription
         }
     }
-    
+
     // MARK: - Intents
-    
+
     func addFriendRow() {
-        items.append(Friend(id: "", name: "", phone: "", invited: false))
+        items.append(Friend(id: "", name: "", phone: "", email: "", invited: false))
     }
-    func invite(_ friend: Friend) {
-        guard let idx = items.firstIndex(where: { $0.id == friend.id }) else { return }
-        items[idx].invited = true
-        Task { await save(items[idx]) }
+
+    func invite(_ friend: Friend) async {
+        guard canInvite else { return }
+        guard !friend.invited else { return }
+
+        let appleLink = "https://apps.apple.com/us/app/YOUR_REAL_APP_ID"
+        let androidLink = "https://play.google.com/store/apps/details?id=YOUR_REAL_ANDROID_BUNDLE_ID"
+
+        let message = """
+        Hi \(friend.name),
+
+        Come play Slug Bug with me!
+
+        Download for iPhone/iPad:
+        \(appleLink)
+
+        Download for Android:
+        \(androidLink)
+        """
+
+        if MessageComposerView.canSendText() {
+            let trimmedPhone = friend.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard !trimmedPhone.isEmpty else {
+                inviteErrorMessage = "This friend does not have a phone number yet."
+                showingInviteError = true
+                return
+            }
+
+            invitePhoneNumber = trimmedPhone
+            inviteMessage = message
+            pendingInviteFriendID = friend.id
+            showingInviteComposer = true
+            return
+        }
+
+        // iPad / unsupported SMS fallback
+        let trimmedEmail = friend.email.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedEmail.isEmpty else {
+            inviteErrorMessage = "This iPad cannot send text messages, and this friend does not have an email address saved yet."
+            showingInviteError = true
+            return
+        }
+
+        inviteMessage = message
+        inviteEmailSubject = "Come play Slug Bug with me"
+        inviteEmailAddress = trimmedEmail
+        pendingInviteFriendID = friend.id
+        showingInviteChoiceAlert = true
     }
-    
+
     func save(_ friend: Friend) async {
         guard !userId.isEmpty else { return }
-        
+
         do {
             try await service.save(friend: friend, for: userId)
             await load()
@@ -89,12 +146,12 @@ final class FriendsVM: ObservableObject {
             self.errorMessage = error.localizedDescription
         }
     }
-    
+
     func delete(at offsets: IndexSet) async {
         guard !userId.isEmpty else { return }
-        
+
         let toDelete = offsets.map { items[$0] }
-        
+
         do {
             for friend in toDelete {
                 if !friend.id.isEmpty {
@@ -105,8 +162,8 @@ final class FriendsVM: ObservableObject {
         } catch {
             self.errorMessage = error.localizedDescription
         }
-        
     }
+
     func deleteFriend(id: String) async throws {
         let trimmedID = id.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !userId.isEmpty else { return }
@@ -114,19 +171,21 @@ final class FriendsVM: ObservableObject {
 
         try await service.remove(friendID: trimmedID, for: userId)
         await load()
-    
-            }
-        }
-    
+    }
 
-        
-    
+    func markInvited(friendID: String) async {
+        guard !userId.isEmpty else { return }
+        guard let index = items.firstIndex(where: { $0.id == friendID }) else { return }
 
+        items[index].invited = true
+        await save(items[index])
+    }
+}
 
 #if DEBUG
 extension FriendsVM {
     static var preview: FriendsVM {
-        let vm = FriendsVM()   // <-- if this doesn't compile, see note below
+        let vm = FriendsVM()
 
         vm.items = [
             Friend(name: "Alice", phone: "555-1234", invited: false),
@@ -138,4 +197,3 @@ extension FriendsVM {
     }
 }
 #endif
-

@@ -17,12 +17,14 @@ struct Friend: Identifiable, Codable, Equatable {
     var id: String         // Firebase: "key"
     var name: String       // Firebase: "friend"
     var phone: String      // Firebase: "phone"
+    var email: String      // Firebase: "email"
     var invited: Bool      // Firebase: "isSelected"
     
     enum CodingKeys: String, CodingKey {
         case id      = "key"
         case name    = "friend"
         case phone   = "phone"
+        case email   = "email"
         case invited = "isSelected"
     }
     
@@ -30,11 +32,13 @@ struct Friend: Identifiable, Codable, Equatable {
         id: String = "",
         name: String = "",
         phone: String = "",
+        email: String = "",
         invited: Bool = false
     ) {
         self.id = id
         self.name = name
         self.phone = phone
+        self.email = email
         self.invited = invited
     }
     
@@ -44,9 +48,10 @@ struct Friend: Identifiable, Codable, Equatable {
             return nil
         }
         
-        self.id      = dict["key"] as? String ?? snapshot.key
-        self.name    = dict["friend"] as? String ?? ""
-        self.phone   = dict["phone"] as? String ?? ""
+        self.id = dict["key"] as? String ?? snapshot.key
+        self.name = dict["friend"] as? String ?? ""
+        self.phone = dict["phone"] as? String ?? ""
+        self.email = dict["email"] as? String ?? ""
         self.invited = dict["isSelected"] as? Bool ?? false
     }
     
@@ -55,8 +60,8 @@ struct Friend: Identifiable, Codable, Equatable {
             "key": id,
             "friend": name,
             "phone": phone,
+            "email": email,
             "isSelected": invited
         ]
     }
 }
-   

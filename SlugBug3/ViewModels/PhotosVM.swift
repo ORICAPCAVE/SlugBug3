@@ -109,33 +109,29 @@ final class PhotosVM: ObservableObject {
                 print("❌ message:", error.localizedDescription)
                 return
             }
-            ref.putData(jpegData, metadata: metadata) { [weak self] metadata, error in
-                if let error = error as NSError? {
-                    print("❌ putData failed at path:", ref.fullPath)
-                    print("❌ code:", error.code)
-                    print("❌ message:", error.localizedDescription)
-                    return
-                }
-
-                print("✅ Upload success:", metadata?.path ?? ref.fullPath)
-                self?.markUploaded(photoID: photo.id)
-
-                let dbRef = Database.database().reference()
-                    .child("users")
-                    .child(uid)
-                    .child("photosMeta")
-                    .child(photo.id)
-
-                dbRef.setValue([
-                    "id": photo.id,
-                    "storagePath": ref.fullPath,
-                    "uploaded": true,
-                    "createdAt": ISO8601DateFormatter().string(from: Date())
-                ])
-            }
 
             print("✅ Upload success:", metadata?.path ?? ref.fullPath)
             self?.markUploaded(photoID: photo.id)
+
+            let dbRef = Database.database().reference()
+                .child("users")
+                .child(uid)
+                .child("photosMeta")
+                .child(photo.id)
+
+            dbRef.setValue([
+                "id": photo.id,
+                "storagePath": ref.fullPath,
+                "uploaded": true,
+                "createdAt": ISO8601DateFormatter().string(from: Date())
+            ]) { error, _ in
+                if let error = error {
+                    print("❌ photosMeta setValue failed:", error.localizedDescription)
+                    return
+                }
+
+                print("✅ photosMeta saved for:", photo.id)
+            }
         }
     }
 

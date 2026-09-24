@@ -21,6 +21,7 @@
 
 
 import SwiftUI
+import MessageUI
 
 struct FriendsView: View {
     @ObservedObject var vm: FriendsVM
@@ -34,32 +35,87 @@ struct FriendsView: View {
     var body: some View {
         
         ZStack {
+            Color.blue
+                   .ignoresSafeArea()
             // Background
-            Image("slugbug1")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+//            Image("slugbug1")
+//                .resizable()
+//                .scaledToFill()
+//                .clipped()
+//                .ignoresSafeArea()
+//                .allowsHitTesting(false)
             
             GeometryReader { geo in
+                
                 let deviceLandscape =
                     (UIApplication.shared.connectedScenes
                         .compactMap { $0 as? UIWindowScene }
                         .first(where: { $0.activationState == .foregroundActive })?
                         .interfaceOrientation.isLandscape) ?? false
 
-                let isNarrowWindow = geo.size.width < 700
+                let isPhone = UIDevice.current.userInterfaceIdiom == .phone
 
                 ZStack(alignment: .top) {
-                    if deviceLandscape && !isNarrowWindow {
+                    Image("slugbug1")
+                                       .resizable()
+                                       .scaledToFill()
+                                       .frame(
+                                           width: geo.size.width,
+                                           height: geo.size.height
+                                       )
+                                       .clipped()
+                                       .allowsHitTesting(false)
+
+                    if deviceLandscape {
                         landscapeBody(geo)
                     } else {
                         portraitBody(geo)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(width: geo.size.width,
+                       height: geo.size.height)
+                .clipped()
                 
             }
+        }
+        .sheet(isPresented: $vm.showingInviteComposer) {
+            MessageComposerView(
+                recipients: [vm.invitePhoneNumber],
+                body: vm.inviteMessage
+            ) { didSend in
+                if didSend, let id = vm.pendingInviteFriendID {
+                    Task {
+                        await vm.markInvited(friendID: id)
+                    }
+                }
+
+                vm.pendingInviteFriendID = nil
+                vm.invitePhoneNumber = ""
+                vm.inviteMessage = ""
+            }
+        }
+        .sheet(isPresented: $vm.showingEmailComposer) {
+            MailComposerView(
+                recipients: [vm.inviteEmailAddress],
+                subject: vm.inviteEmailSubject,
+                body: vm.inviteMessage
+            ) { didSend in
+                if didSend, let id = vm.pendingInviteFriendID {
+                    Task {
+                        await vm.markInvited(friendID: id)
+                    }
+                }
+
+                vm.pendingInviteFriendID = nil
+                vm.inviteEmailAddress = ""
+                vm.inviteEmailSubject = ""
+                vm.inviteMessage = ""
+            }
+        }
+        .alert("Invite", isPresented: $vm.showingInviteError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(vm.inviteErrorMessage ?? "Unable to send invite.")
         }
         .alert("Delete Friend?", isPresented: $isShowingDeleteAlert) {
             Button("Delete", role: .destructive) {
@@ -72,6 +128,30 @@ struct FriendsView: View {
             }
         } message: {
             Text("Are you sure you want to delete \(pendingDeleteName ?? "this friend")?")
+        }
+        .confirmationDialog(
+            "Text Messaging Unavailable",
+            isPresented: $vm.showingInviteChoiceAlert,
+            titleVisibility: .visible
+        ) {
+            Button("Email Invite") {
+                guard MailComposerView.canSendMail() else {
+                    vm.inviteErrorMessage = "Mail is not configured on this device."
+                    vm.showingInviteError = true
+                    return
+                }
+
+                vm.showingEmailComposer = true
+            }
+
+            Button("Cancel", role: .cancel) {
+                vm.pendingInviteFriendID = nil
+                vm.inviteEmailAddress = ""
+                vm.inviteEmailSubject = ""
+                vm.inviteMessage = ""
+            }
+        } message: {
+            Text("This iPad cannot send text messages. You can send an email invitation instead.")
         }
  
         .navigationTitle("Friends")
@@ -105,7 +185,12 @@ struct FriendsView: View {
     private var friendsContent: some View {
         VStack(spacing: 8) {
             ForEach(vm.items.indices, id: \.self) { index in
-                friendRow(index: index)
+
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    phoneFriendRow(index: index)
+                } else {
+                    friendRow(index: index)
+                }
             }
             
             Button {
@@ -119,89 +204,194 @@ struct FriendsView: View {
             }
             .padding(.top, 8)
         }
-        .padding(.horizontal)
+        .padding(.horizontal,12)
+        .frame(maxWidth: .infinity)
     }
     @ViewBuilder
     func landscapeBody(_ geo: GeometryProxy) -> some View {
 
-        let drop = geo.size.height * 0.30   // 👈 20% vertical drop
+        ScrollView(.vertical, showsIndicators: true) {
 
-        return ZStack(alignment: .top) {
+            VStack(spacing: 6) {
 
-            ScrollView {
-                friendsContent
-                    .padding(.vertical, 16)
-                    .frame(maxWidth: .infinity)
+                ForEach(vm.items.indices, id: \.self) { index in
+                    phoneFriendRow(index: index)
+                }
+
+                Button {
+                    vm.addFriendRow()
+                } label: {
+                    Label("Add Friend", systemImage: "plus.circle")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.top, 4)
             }
-            .padding(.top, drop)   // 👈 THIS moves the ScrollView down
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 30)
         }
+        .frame(
+            width: geo.size.width,
+            height: geo.size.height
+        )
     }
-        
-    
     
     @ViewBuilder
     func portraitBody(_ geo: GeometryProxy) -> some View {
 
-        let drop = geo.size.height * 0.10   // 👈 10% drop
+        ScrollView(.vertical, showsIndicators: true) {
 
-        return ZStack(alignment: .top) {
+            VStack(spacing: 8) {
 
-            ScrollView {
-                friendsContent
-                    .padding(.vertical, 16)
+                ForEach(vm.items.indices, id: \.self) { index in
+                    phoneFriendRow(index: index)
+                }
+
+                Button {
+                    vm.addFriendRow()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add Friend")
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(.blue.opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
             }
-            .padding(.top, drop)   // 👈 moves it down
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 30)
         }
     }
     private func onBack() {
         dismiss()
     }
-    private func friendRow(index: Int) -> some View {
-        let friend = $vm.items[index]
-        
-        return HStack {
-            VStack(alignment: .leading) {
-                TextField("Name", text: friend.name)
-                    .textInputAutocapitalization(.words)
-                
-                TextField("Phone", text: friend.phone)
-                    .keyboardType(.phonePad)
+    private func phoneFriendRow(index: Int) -> some View {
+        let friend = vm.items[index]
+
+        return Button {
+            // We'll open the Edit Friend sheet here next.
+        } label: {
+            HStack(spacing: 12) {
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(friend.name.isEmpty ? "New Friend" : friend.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    if !friend.phone.isEmpty {
+                        Text(friend.phone)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                Image(
+                    systemName: friend.invited
+                        ? "checkmark.circle.fill"
+                        : "circle"
+                )
+                .foregroundStyle(
+                    friend.invited ? .green : .secondary
+                )
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            
-            Spacer()
-            Button("Save") {
-                Task { await vm.save(friend.wrappedValue) }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(.thinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+    private func friendRow(index: Int) -> some View {
+        let friend = $vm.items[index]
+
+        return VStack(alignment: .leading, spacing: 8) {
+
+            // Friend information
+            TextField("Name", text: friend.name)
+                .textInputAutocapitalization(.words)
+
+            TextField("Phone", text: friend.phone)
+                .keyboardType(.phonePad)
+                .foregroundStyle(.secondary)
+
+            TextField("Email", text: friend.email)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .foregroundStyle(.secondary)
+
+            // Controls
+            HStack {
+                Button("Save") {
+                    Task {
+                        await vm.save(friend.wrappedValue)
+                    }
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.blue.opacity(0.7))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Spacer()
+
+                Button {
+                    let current = friend.wrappedValue
+                    guard !current.invited else { return }
+
+                    Task {
+                        await vm.invite(current)
+                    }
+                } label: {
+                    Image(
+                        systemName:
+                            friend.invited.wrappedValue
+                            ? "checkmark.circle.fill"
+                            : "circle"
+                    )
+                }
+                .disabled(
+                    !vm.canInvite ||
+                    friend.invited.wrappedValue
+                )
+
+                Button(role: .destructive) {
+                    let item = vm.items[index]
+
+                    pendingDeleteID = item.id
+                    pendingDeleteName =
+                        item.name.isEmpty
+                        ? "this friend"
+                        : item.name
+
+                    isShowingDeleteAlert = true
+                } label: {
+                    Image(systemName: "trash")
+                }
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.blue.opacity(0.7))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            
-            Button {
-                friend.invited.wrappedValue.toggle()
-                Task { await vm.save(friend.wrappedValue) }
-            } label: {
-                Image(systemName: friend.invited.wrappedValue ? "checkmark.circle.fill" : "circle")
-            }
-            .padding(.horizontal, 4)
-            .disabled(!vm.canInvite)
-            
-            Button(role: .destructive) {
-                let item = vm.items[index]
-                pendingDeleteID = item.id
-                pendingDeleteName = item.name.isEmpty ? "this friend" : item.name
-                isShowingDeleteAlert = true
-            } label: {
-                Image(systemName: "trash")
-            }
-            
         }
         .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
