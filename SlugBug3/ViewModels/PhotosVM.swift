@@ -134,6 +134,98 @@ final class PhotosVM: ObservableObject {
             }
         }
     }
+    func downloadLibraryFromFirebase() {
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("⚠️ No logged-in user; cannot download photo library.")
+            return
+        }
+
+        let dbRef = Database.database().reference()
+            .child("users")
+            .child(uid)
+            .child("photosMeta")
+
+        print("⬇️ Checking Firebase photo library...")
+
+        dbRef.observeSingleEvent(of: .value) { [weak self] snapshot in
+
+            guard let self else { return }
+
+            guard snapshot.exists() else {
+                print("ℹ️ No uploaded photos found in Firebase.")
+                return
+            }
+
+            // IDs already stored on this device.
+            let localIDs = Set(self.loadRecords().map { $0.id })
+
+            for child in snapshot.children {
+
+                guard let snap = child as? DataSnapshot,
+                      let value = snap.value as? [String: Any],
+                      let id = value["id"] as? String,
+                      let storagePath = value["storagePath"] as? String
+                else {
+                    continue
+                }
+
+                // Don't download photos already on this device.
+                guard !localIDs.contains(id) else {
+                    print("ℹ️ Already local:", id)
+                    continue
+                }
+
+                let createdAt: Date = {
+                    if let text = value["createdAt"] as? String,
+                       let date = ISO8601DateFormatter().date(from: text) {
+                        return date
+                    }
+
+                    return Date()
+                }()
+
+                let storageRef = Storage.storage().reference()
+                    .child(storagePath)
+
+                print("⬇️ Downloading:", storagePath)
+
+                storageRef.getData(maxSize: 20 * 1024 * 1024) { data, error in
+
+                    if let error {
+                        print("❌ Photo download failed:", error.localizedDescription)
+                        return
+                    }
+
+                    guard let data,
+                          let image = UIImage(data: data) else {
+                        print("❌ Downloaded data was not a valid image:", id)
+                        return
+                    }
+
+                    let photo = BugPhoto(
+                        id: id,
+                        image: image,
+                        createdAt: createdAt,
+                        note: nil,
+                        scoreId: nil,
+                        uploaded: true
+                    )
+
+                    DispatchQueue.main.async {
+                        self.saveToDisk(photo: photo)
+
+                        if !self.photos.contains(where: { $0.id == id }) {
+                            self.photos.append(photo)
+                            self.photos.sort { $0.createdAt > $1.createdAt }
+                        }
+
+                        print("✅ Downloaded photo:", id)
+                    }
+                }
+            }
+        }
+    }
 
     // MARK: - Disk persistence
 

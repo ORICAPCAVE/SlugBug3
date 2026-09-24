@@ -235,7 +235,20 @@ struct PhotosView: View {
                                 Text("Your Buggy Library")
                                     .font(.headline)
                                     .foregroundColor(.white)
-                                
+
+                                Button {
+                                    vm.downloadLibraryFromFirebase()
+                                } label: {
+                                    Label(
+                                        "Download Library",
+                                        systemImage: "icloud.and.arrow.down"
+                                    )
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.blue)
+
                                 if vm.photos.isEmpty {
                                     Text("No photos yet. Spot a Bug and tap the button!")
                                         .foregroundColor(.white.opacity(0.8))

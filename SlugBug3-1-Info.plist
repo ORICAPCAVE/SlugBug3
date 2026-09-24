@@ -13,12 +13,18 @@
 			<string>GoogleSignIn</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.318051309802-52ng1psuf7scj884j06t9jija133kebl</string>
+				<string>com.googleusercontent.apps.318051309802-8d2icddca8130o3fvn6jvc04mf6iijtm</string>
 			</array>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string></string>
 		</dict>
 	</array>
 </dict>
