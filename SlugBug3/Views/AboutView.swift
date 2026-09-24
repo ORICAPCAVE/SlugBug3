@@ -38,26 +38,48 @@ struct AboutView: View {
     }
     var body: some View {
         ZStack {
-            Image("slugbug1")
-                .resizable()
-                .scaledToFill()
+
+            Color.black
                 .ignoresSafeArea()
-                .allowsHitTesting(false)
 
             GeometryReader { geo in
-                let deviceLandscape =
-                    (UIApplication.shared.connectedScenes
-                        .compactMap { $0 as? UIWindowScene }
-                        .first(where: { $0.activationState == .foregroundActive })?
-                        .interfaceOrientation.isLandscape) ?? false
 
-                let topDrop = deviceLandscape ? geo.size.height * 0.30 : 30
-                let rightShift = deviceLandscape ? geo.size.width * 0.10 : 0
-                let availableWidth = max(0, geo.size.width - 32)
-                let boxWidth = min(600, availableWidth)
-                ScrollView {
-                    // ✅ vertical drop that remains scrollable
-                    Color.clear.frame(height: topDrop)
+                let deviceLandscape =
+                    geo.size.width > geo.size.height
+
+                let topDrop =
+                    deviceLandscape
+                    ? geo.size.height * 0.30
+                    : 30
+
+                let rightShift =
+                    deviceLandscape
+                    ? geo.size.width * 0.10
+                    : 0
+
+                let availableWidth =
+                    max(0, geo.size.width - 32)
+
+                let boxWidth =
+                    min(600, availableWidth)
+
+                ZStack {
+
+                    Image("slugbug1")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: geo.size.width,
+                            height: geo.size.height
+                        )
+                        .clipped()
+                        .allowsHitTesting(false)
+
+                    ScrollView {
+                        
+                        // vertical drop that remains scrollable
+                        Color.clear
+                        .frame(height: topDrop)}
 
                     // ✅ horizontal shift that won't clip
                     VStack(spacing: 14) {

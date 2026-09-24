@@ -148,16 +148,15 @@ struct RulesView: View {
                         
                         if let attributed =
                             try? AttributedString(markdown: trimmed) {
-                            
+
                             Text(attributed)
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(.white)
+                                .tint(.yellow)
                                 .fixedSize(
                                     horizontal: false,
                                     vertical: true
                                 )
-                        
-                            
                         } else {
                             
                             Text(trimmed)
