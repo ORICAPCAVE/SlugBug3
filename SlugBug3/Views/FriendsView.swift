@@ -221,12 +221,18 @@ struct FriendsView: View {
                 Button {
                     vm.addFriendRow()
                 } label: {
-                    Label("Add Friend", systemImage: "plus.circle")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add Friend")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(.blue.opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.plain)
                 .padding(.top, 4)
             }
             .padding(.horizontal, 20)

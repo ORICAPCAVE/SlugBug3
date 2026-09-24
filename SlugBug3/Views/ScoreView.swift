@@ -71,17 +71,6 @@ struct ScoreView: View {
                     
                     
                     if useLandscape {
-                        VStack(spacing: 0) {
-                            Text("LANDSCAPE ✅")
-                                .font(.headline.bold())
-                                .padding(8)
-                                .background(Color.green.opacity(0.8))
-                                .cornerRadius(8)
-                                .foregroundStyle(.white)
-                            
-                            // rest of your landscape content here
-                        }
-                        
                         let topDrop = geo.size.height * 0.30
                         let windowW = min(geo.size.width * 0.75, 620)
                         let scoreH = geo.size.height * 0.25
