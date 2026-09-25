@@ -31,6 +31,9 @@ struct FriendsView: View {
     @State private var pendingDeleteID: String?
     @State private var pendingDeleteName: String?
     @State private var isShowingDeleteAlert = false
+    // MARK: - Add/Edit Friend state
+    @State private var isShowingFriendEditor = false
+    @State private var editingFriend: Friend?
     
     var body: some View {
         
@@ -76,6 +79,20 @@ struct FriendsView: View {
                        height: geo.size.height)
                 .clipped()
                 
+            }
+        }
+        .sheet(isPresented: $isShowingFriendEditor) {
+            if let friend = editingFriend {
+                FriendEditorView(
+                    friend: friend
+                ) { savedFriend in
+                    Task {
+                        await vm.save(savedFriend)
+                    }
+
+                    editingFriend = nil
+                    isShowingFriendEditor = false
+                }
             }
         }
         .sheet(isPresented: $vm.showingInviteComposer) {
@@ -194,7 +211,14 @@ struct FriendsView: View {
             }
             
             Button {
-                vm.addFriendRow()
+                editingFriend = Friend(
+                    id: "",
+                    name: "",
+                    phone: "",
+                    email: "",
+                    invited: false
+                )
+                isShowingFriendEditor = true
             } label: {
                 Label("Add Friend", systemImage: "plus.circle")
                     .padding()
@@ -219,7 +243,14 @@ struct FriendsView: View {
                 }
 
                 Button {
-                    vm.addFriendRow()
+                    editingFriend = Friend(
+                        id: "",
+                        name: "",
+                        phone: "",
+                        email: "",
+                        invited: false
+                    )
+                    isShowingFriendEditor = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
@@ -257,7 +288,14 @@ struct FriendsView: View {
                 }
 
                 Button {
-                    vm.addFriendRow()
+                    editingFriend = Friend(
+                        id: "",
+                        name: "",
+                        phone: "",
+                        email: "",
+                        invited: false
+                    )
+                    isShowingFriendEditor = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
@@ -285,7 +323,8 @@ struct FriendsView: View {
         let friend = vm.items[index]
 
         return Button {
-            // We'll open the Edit Friend sheet here next.
+            editingFriend = friend
+            isShowingFriendEditor = true
         } label: {
             HStack(spacing: 12) {
 
@@ -305,14 +344,25 @@ struct FriendsView: View {
 
                 Spacer()
 
-                Image(
-                    systemName: friend.invited
-                        ? "checkmark.circle.fill"
-                        : "circle"
-                )
-                .foregroundStyle(
-                    friend.invited ? .green : .secondary
-                )
+                Button {
+                    guard !friend.invited else { return }
+
+                    Task {
+                        await vm.invite(friend)
+                    }
+                } label: {
+                    Image(
+                        systemName: friend.invited
+                            ? "checkmark.circle.fill"
+                            : "paperplane.circle.fill"
+                    )
+                    .font(.title3)
+                    .foregroundStyle(
+                        friend.invited ? .green : .blue
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(!vm.canInvite || friend.invited)
 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -431,15 +481,64 @@ struct FriendsView: View {
         }
     }
 }
+private struct FriendEditorView: View {
 
-#Preview("Friends - iPad Landscape") {
-    NavigationStack {
-        FriendsView(vm: .preview)
-            .navigationTitle("Friends")
-            .navigationBarTitleDisplayMode(.inline)
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var friend: Friend
+
+    let onSave: (Friend) -> Void
+
+    init(
+        friend: Friend,
+        onSave: @escaping (Friend) -> Void
+    ) {
+        _friend = State(initialValue: friend)
+        self.onSave = onSave
     }
-    .previewDevice("iPad Pro (12.9-inch) (6th generation)")
-    .previewInterfaceOrientation(.landscapeLeft)
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Friend Information") {
+
+                    TextField("Name", text: $friend.name)
+                        .textInputAutocapitalization(.words)
+
+                    TextField("Phone Number", text: $friend.phone)
+                        .keyboardType(.phonePad)
+
+                    TextField("Email", text: $friend.email)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+            }
+            .navigationTitle(
+                friend.id.isEmpty ? "Add Friend" : "Edit Friend"
+            )
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(friend)
+                    }
+                    .disabled(
+                        friend.name
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .isEmpty
+                    )
+                }
+            }
+        }
+    }
 }
 
 
