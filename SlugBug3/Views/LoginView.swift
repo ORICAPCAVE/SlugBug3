@@ -40,6 +40,8 @@
 import SwiftUI
 import GoogleSignIn
 
+
+
 struct LoginView: View {
     @EnvironmentObject var session: SessionVM
     @StateObject private var vm = LoginVM()
@@ -104,10 +106,13 @@ struct LoginView: View {
                         
                         HStack(spacing: 16) {
                             Button("Sign Up", action: onRegister)
+                                .foregroundStyle(.white)
+                            
                             Spacer()
+                            
                             Button("Forgot Password", action: onForgot)
+                                .foregroundStyle(.white)
                         }
-                        
                         Button {
                             if let vc = topViewController() {
                                 Task {
@@ -121,10 +126,10 @@ struct LoginView: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "g.circle.fill")
                                     .font(.title3)
-
+                                
                                 Text("Sign in with Google")
                                     .font(.headline)
-
+                                
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -137,50 +142,73 @@ struct LoginView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .shadow(radius: 6) // lifts it off the background
                         }
+                        
                         .buttonStyle(.plain) // avoid SwiftUI muting it
                         .disabled(vm.isLoading)
                         
+                        Button {
+                            vm.startAppleSignIn()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "apple.logo")
+                                    .font(.title3)
+
+                                Text("Sign in with Apple")
+                                    .font(.headline)
+
+                                Spacer()
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background(.black)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(vm.isLoading)
+                        
                         Button("Home", action: onHome)
+                            .foregroundStyle(.white)
                             .padding(.top, 8)
+                            .padding(.vertical, 24)
+                            .padding(.horizontal, 24)
+                            .frame(maxWidth: maxCardW)                 // ✅ keeps it from stretching too wide
+                            .frame(minHeight: geo.size.height)         // ✅ allows true vertical centering
+                            .frame(maxWidth: .infinity)                // ✅ center the whole “card”
                     }
-                    .padding(.vertical, 24)
-                    .padding(.horizontal, 24)
-                    .frame(maxWidth: maxCardW)                 // ✅ keeps it from stretching too wide
-                    .frame(minHeight: geo.size.height)         // ✅ allows true vertical centering
-                    .frame(maxWidth: .infinity)                // ✅ center the whole “card”
-                }
-                .scrollIndicators(.hidden)
-                .scrollDismissesKeyboard(.interactively)        // ✅ landscape/keyboard friendly
-                .safeAreaInset(edge: .bottom) {                 // ✅ breathing room above Home bar
-                    Color.clear.frame(height: 12)
-                }
-                
-                if vm.isLoading {
-                    Color.black.opacity(0.2).ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .scaleEffect(1.2)
+                    .scrollIndicators(.hidden)
+                    .scrollDismissesKeyboard(.interactively)        // ✅ landscape/keyboard friendly
+                    .safeAreaInset(edge: .bottom) {                 // ✅ breathing room above Home bar
+                        Color.clear.frame(height: 12)
+                    }
+                    
+                    if vm.isLoading {
+                        Color.black.opacity(0.2).ignoresSafeArea()
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .scaleEffect(1.2)
+                    }
                 }
             }
         }
     }
-}
-
-// Presenter helper for Google Sign-In
-@MainActor
-private func topViewController(
-    base: UIViewController? = UIApplication.shared.connectedScenes
-        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
-        .first?.rootViewController
-) -> UIViewController? {
-    if let nav = base as? UINavigationController {
-        return topViewController(base: nav.visibleViewController)
+    
+    // Presenter helper for Google Sign-In
+    @MainActor
+    private func topViewController(
+        base: UIViewController? = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+            .first?.rootViewController
+    ) -> UIViewController? {
+        if let nav = base as? UINavigationController {
+            return topViewController(base: nav.visibleViewController)
+        }
+        if let tab = base as? UITabBarController {
+            return topViewController(base: tab.selectedViewController)
+        }
+        if let presented = base?.presentedViewController {
+            return topViewController(base: presented)
+        }
+        return base
     }
-    if let tab = base as? UITabBarController {
-        return topViewController(base: tab.selectedViewController)
-    }
-    if let presented = base?.presentedViewController {
-        return topViewController(base: presented)
-    }
-    return base
 }

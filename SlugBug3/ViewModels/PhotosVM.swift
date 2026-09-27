@@ -47,7 +47,31 @@ final class PhotosVM: ObservableObject {
     private let metadataFilename = "bug_photos.json"
 
     private var docsURL: URL {
-        fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let documents = fileManager.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first!
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return documents.appendingPathComponent("users/no-user", isDirectory: true)
+        }
+
+        let userDirectory = documents
+            .appendingPathComponent("users", isDirectory: true)
+            .appendingPathComponent(uid, isDirectory: true)
+
+        if !fileManager.fileExists(atPath: userDirectory.path) {
+            do {
+                try fileManager.createDirectory(
+                    at: userDirectory,
+                    withIntermediateDirectories: true
+                )
+            } catch {
+                print("❌ Could not create user photo directory:", error)
+            }
+        }
+
+        return userDirectory
     }
 
     private var metadataURL: URL {

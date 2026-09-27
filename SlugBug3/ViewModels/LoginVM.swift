@@ -8,9 +8,12 @@ import Foundation
 import FirebaseAuth
 import GoogleSignIn
 import Combine
+import AuthenticationServices
+import CryptoKit
+
 
 @MainActor
-final class LoginVM: ObservableObject {
+final class LoginVM: NSObject, ObservableObject {
     // MARK: - Inputs
     @Published var email: String = ""
     @Published var password: String = ""
@@ -18,6 +21,8 @@ final class LoginVM: ObservableObject {
     // MARK: - UI State
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    
+    private var currentNonce: String?
 
     // Simple form validation
     var canSubmitEmail: Bool { !email.isEmpty && !password.isEmpty }
@@ -95,6 +100,65 @@ final class LoginVM: ObservableObject {
             errorMessage = mapAuthError(error)
         }
     }
+    func startAppleSignIn() {
+        errorMessage = nil
+        isLoading = true
+
+        let nonce = randomNonceString()
+        currentNonce = nonce
+
+        let provider = ASAuthorizationAppleIDProvider()
+        let request = provider.createRequest()
+
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
+
+        let controller = ASAuthorizationController(
+            authorizationRequests: [request]
+        )
+
+        controller.delegate = self
+        controller.performRequests()
+    }
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+
+        let charset =
+            Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+
+        var result = ""
+        var remainingLength = length
+
+        while remainingLength > 0 {
+            var random: UInt8 = 0
+
+            let errorCode = SecRandomCopyBytes(
+                kSecRandomDefault,
+                1,
+                &random
+            )
+
+            if errorCode != errSecSuccess {
+                fatalError("Unable to generate nonce.")
+            }
+
+            if random < charset.count {
+                result.append(charset[Int(random)])
+                remainingLength -= 1
+            }
+        }
+
+        return result
+    }
+
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+
+        return hashedData
+            .compactMap { String(format: "%02x", $0) }
+            .joined()
+    }
 
     // MARK: - Error mapping (friendly messages)
     private func mapAuthError(_ error: Error) -> String {
@@ -113,6 +177,63 @@ final class LoginVM: ObservableObject {
         case .requiresRecentLogin: return "Please sign in again to continue."
         case .networkError:        return "Network error. Check your connection."
         default:                   return ns.localizedDescription
+        }
+    }
+}
+extension LoginVM: ASAuthorizationControllerDelegate {
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let appleCredential =
+                authorization.credential as? ASAuthorizationAppleIDCredential,
+              let nonce = currentNonce,
+              let appleIDToken = appleCredential.identityToken,
+              let idTokenString =
+                String(data: appleIDToken, encoding: .utf8) else {
+
+            isLoading = false
+            errorMessage = "Unable to obtain Apple credentials."
+            return
+        }
+
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: nonce,
+            fullName: appleCredential.fullName
+        )
+
+        Task {
+            do {
+                _ = try await Auth.auth().signIn(with: credential)
+
+                print("LOGIN OK: Apple Firebase signIn returned")
+                errorMessage = nil
+
+            } catch {
+                print("APPLE FIREBASE LOGIN ERROR:", error)
+                errorMessage = mapAuthError(error)
+            }
+
+            currentNonce = nil
+            isLoading = false
+        }
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        print("APPLE AUTHORIZATION ERROR:", error)
+
+        currentNonce = nil
+        isLoading = false
+
+        let nsError = error as NSError
+
+        if nsError.code != ASAuthorizationError.canceled.rawValue {
+            errorMessage = error.localizedDescription
         }
     }
 }
